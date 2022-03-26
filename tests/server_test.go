@@ -43,6 +43,8 @@ func TestWordAddition(t *testing.T) {
 	srv.ServeHTTP(w, req)
 	statusCode := w.Result().StatusCode
 	assert.Equal(t, statusCode, http.StatusOK)
+	srv, err = app.NewApp()
+	assert.NilError(t, err)
 	req = httptest.NewRequest("GET", "/word", &buf)
 	req.Header.Set("x-api-key", utils.GetEnv("TEST_API_KEY", ""))
 	w = httptest.NewRecorder()
@@ -51,7 +53,7 @@ func TestWordAddition(t *testing.T) {
 	assert.Equal(t, statusCode, http.StatusOK)
 	wordList := make([]string, 0)
 	err = json.NewDecoder(w.Body).Decode(&wordList)
-	assert.NilError(t, err)
+	assert.NilError(t, err, "Get response read error")
 	found := false
 	for _, w := range wordList {
 		if w == newWord {
