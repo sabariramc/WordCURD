@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -19,9 +20,16 @@ func TestServerRequest(t *testing.T) {
 		"Word": "test",
 	}
 	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(body)
-	req := httptest.NewRequest("POST", "/tenant", &buf)
+	err = json.NewEncoder(&buf).Encode(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest("GET", "/word", &buf)
 	req.Header.Set("x-api-key", utils.GetEnv("TEST_API_KEY", ""))
 	w := httptest.NewRecorder()
 	srv.ServeHTTP(w, req)
+	statusCode := w.Result().StatusCode
+	if statusCode != http.StatusOK {
+		t.Fatalf("Status Code %v", statusCode)
+	}
 }
