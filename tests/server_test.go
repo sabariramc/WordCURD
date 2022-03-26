@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sabariramc/WordCURD/pkg/app"
-	"sabariram.com/goserverbase.git/utils"
+	"github.com/sabariramc/WordCURD/pkg/utils"
 )
 
 func TestServerRequest(t *testing.T) {
