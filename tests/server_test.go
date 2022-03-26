@@ -3,48 +3,60 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/sabariramc/WordCURD/pkg/app"
 	"github.com/sabariramc/WordCURD/pkg/utils"
+	"gotest.tools/assert"
 )
 
 func TestServerRequest(t *testing.T) {
 	srv, err := app.NewApp()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NilError(t, err)
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set("x-api-key", utils.GetEnv("TEST_API_KEY", ""))
 	w := httptest.NewRecorder()
 	srv.ServeHTTP(w, req)
 	statusCode := w.Result().StatusCode
-	if statusCode != http.StatusOK {
-		t.Fatalf("Status Code %v", statusCode)
-	}
+	assert.Equal(t, statusCode, http.StatusOK)
+	res := string(w.Body.Bytes())
+	assert.Equal(t, res, "Hello, World!")
 }
 
 func TestWordAddition(t *testing.T) {
 	srv, err := app.NewApp()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NilError(t, err)
+	newWord := fmt.Sprintf("test-%v", uuid.New().String())
 	body := map[string]string{
-		"Word": "test",
+		"Word": newWord,
 	}
 	var buf bytes.Buffer
 	err = json.NewEncoder(&buf).Encode(body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req := httptest.NewRequest("GET", "/word", &buf)
+	assert.NilError(t, err)
+	req := httptest.NewRequest("POST", "/word", &buf)
 	req.Header.Set("x-api-key", utils.GetEnv("TEST_API_KEY", ""))
 	w := httptest.NewRecorder()
 	srv.ServeHTTP(w, req)
 	statusCode := w.Result().StatusCode
-	if statusCode != http.StatusOK {
-		t.Fatalf("Status Code %v", statusCode)
+	assert.Equal(t, statusCode, http.StatusOK)
+	req = httptest.NewRequest("GET", "/word", &buf)
+	req.Header.Set("x-api-key", utils.GetEnv("TEST_API_KEY", ""))
+	w = httptest.NewRecorder()
+	srv.ServeHTTP(w, req)
+	statusCode = w.Result().StatusCode
+	assert.Equal(t, statusCode, http.StatusOK)
+	wordList := make([]string, 0)
+	err = json.NewDecoder(w.Body).Decode(&wordList)
+	assert.NilError(t, err)
+	found := false
+	for _, w := range wordList {
+		if w == newWord {
+			found = true
+		}
 	}
+	assert.Equal(t, found, true, "Word not found")
 }
